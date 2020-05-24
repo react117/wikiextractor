@@ -72,7 +72,6 @@ from multiprocessing import Queue, Process, Value, cpu_count
 from timeit import default_timer
 import random
 
-
 PY2 = sys.version_info[0] == 2
 # Python 2.7 compatibiity
 if PY2:
