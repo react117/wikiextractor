@@ -70,6 +70,7 @@ import json
 from io import StringIO
 from multiprocessing import Queue, Process, Value, cpu_count
 from timeit import default_timer
+import random
 
 
 PY2 = sys.version_info[0] == 2
@@ -563,21 +564,96 @@ class Extractor(object):
         """
         url = get_url(self.id)
         if options.write_json:
-            json_data = {
-                'id': self.id,
-                'url': url,
-                'title': self.title,
-                'text': "\n".join(text)
-            }
-            if options.print_revision:
-                json_data['revid'] = self.revid
-            # We don't use json.dump(data, out) because we want to be
-            # able to encode the string if the output is sys.stdout
-            out_str = json.dumps(json_data, ensure_ascii=False)
-            if out == sys.stdout:   # option -a or -o -
-                out_str = out_str.encode('utf-8')
-            out.write(out_str)
-            out.write('\n')
+            # json_data = {
+            #     'id': self.id,
+            #     'url': url,
+            #     'title': self.title,
+            #     'text': "\n".join(text)
+            # }
+            # if options.print_revision:
+            #     json_data['revid'] = self.revid
+            # # We don't use json.dump(data, out) because we want to be
+            # # able to encode the string if the output is sys.stdout
+            # out_str = json.dumps(json_data, ensure_ascii=False)
+            # if out == sys.stdout:   # option -a or -o -
+            #     out_str = out_str.encode('utf-8')
+            # out.write(out_str)
+            # out.write('\n')
+
+            # Formatted json: Suitable for section title work
+
+            # Iterate through the list named text
+            # see if the line has 'Section::::' in it
+            # if yes then make a new json to store this section
+            # and write the previous json [if any]
+            # else continue to append the line to the last stored 
+            # section json pbject
+
+            sectionText = []
+            json_data = {}
+            sectionTitle = ""
+
+            # get all section titles in this article
+            allSectionTitles = [s.replace('Section::::', '') for s in text if "Section::::" in s]
+
+            for line in text:
+                if "Section::::" in line:
+                    if(sectionTitle):
+                        currSectionText =  "\n".join(sectionText)
+
+                        if(len(currSectionText) >= 400):
+
+                            # Initialise 4 ramdom titles
+                            random.shuffle(allSectionTitles)
+
+                            # Now select first 4
+                            # if any of them turns out to be the correct 
+                            # title update 'correctTitle' key accordingly
+                            # else set 'correctTitle' as random
+                            listSectionTitles = {
+                                'titleA': allSectionTitles[0], 
+                                'titleB': allSectionTitles[1], 
+                                'titleC': allSectionTitles[2], 
+                                'titleD': allSectionTitles[3]
+                            }
+
+                            if(allSectionTitles[0] == sectionTitle):
+                                correctSectionTitle = "titleA"
+                            elif(allSectionTitles[1] == sectionTitle):
+                                correctSectionTitle = "titleB"
+                            elif(allSectionTitles[2] == sectionTitle):
+                                correctSectionTitle = "titleC"
+                            elif(allSectionTitles[3] == sectionTitle):
+                                correctSectionTitle = "titleD"
+                            else:
+                                correctSectionTitle = random.choice(['titleA', 'titleB', 'titleC', 'titleD'])
+                                listSectionTitles[correctSectionTitle] = sectionTitle
+
+                            json_data = {
+                                'id': self.id,
+                                'url': url,
+                                'correctTitle': correctSectionTitle,
+                                'sectionText': currSectionText
+                            }
+
+                            # final json
+                            json_data.update(listSectionTitles)
+
+                            if options.print_revision:
+                                json_data['revid'] = self.revid
+                            
+                            # We don't use json.dump(data, out) because we want to be
+                            # able to encode the string if the output is sys.stdout
+                            out_str = json.dumps(json_data, ensure_ascii=False)
+                            if out == sys.stdout:   # option -a or -o -
+                                out_str = out_str.encode('utf-8')
+                            out.write(out_str)
+                            out.write('\n')
+
+                    sectionTitle = line.replace('Section::::', '')
+                    sectionText = []
+                else:
+                    sectionText.append(line)
         else:
             if options.print_revision:
                 header = '<doc id="%s" revid="%s" url="%s" title="%s">\n' % (self.id, self.revid, url, self.title)
