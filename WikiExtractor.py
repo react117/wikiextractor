@@ -563,6 +563,7 @@ class Extractor(object):
         """
         url = get_url(self.id)
         if options.write_json:
+            # |==== OLD CODE ====|
             # json_data = {
             #     'id': self.id,
             #     'url': url,
@@ -578,9 +579,10 @@ class Extractor(object):
             #     out_str = out_str.encode('utf-8')
             # out.write(out_str)
             # out.write('\n')
+            # |==== /OLD CODE ====|
 
             # Formatted json: Suitable for section title work
-
+            # 
             # Iterate through the list named text
             # see if the line has 'Section::::' in it
             # if yes then make a new json to store this section
@@ -593,15 +595,15 @@ class Extractor(object):
             sectionTitle = ""
 
             # get all section titles in this article
-            allSectionTitles = [s.replace('Section::::', '') for s in text if "Section::::" in s]
+            allSectionTitles = [s.replace('Section::::', '').replace('.', '') for s in text if "Section::::" in s]
 
             for line in text:
                 if "Section::::" in line:
                     if(sectionTitle):
                         currSectionText =  "\n".join(sectionText)
 
-                        if(len(currSectionText) >= 400):
-
+                        # Consider sections that have 300 characters or more
+                        if(len(currSectionText) >= 300):
                             # Initialise 4 ramdom titles
                             random.shuffle(allSectionTitles)
 
@@ -649,7 +651,7 @@ class Extractor(object):
                             out.write(out_str)
                             out.write('\n')
 
-                    sectionTitle = line.replace('Section::::', '')
+                    sectionTitle = line.replace('Section::::', '').replace('.', '')
                     sectionText = []
                 else:
                     sectionText.append(line)
